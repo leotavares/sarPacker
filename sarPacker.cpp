@@ -73,10 +73,9 @@ void createFile(const char * dir){
         fileOpened.open (directories.front().c_str(), std::fstream::in| std::fstream::binary |std::fstream::ate);
         if(fileOpened.is_open()){
             fs<<fileOpened.tellg()<<"|";
-            fs.
+            fileOpened.seekg (0, fileOpened.beg);
         }else
             fs<<"-1|";
-
 
         cout<<normalizedDirectories.front()<<endl;
 
@@ -90,7 +89,7 @@ void createFile(const char * dir){
 
 int main (void)
 {
-    createFile("C:\\Users\\leona\\Documents\\My Games");
+    createFile("C:\\Users\\leona\\Documents\\GitHub\\sarPacker");
     //dirList(".\\");
     //dirList("C:\\Users\\leona\\Documents\\My Games");
 }
