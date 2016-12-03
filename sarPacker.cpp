@@ -9,6 +9,8 @@
 
 using namespace std;
 
+const int blockSize = 4096;
+
 queue<string> dirList(const char * parent){
 
     DIR *dp;
@@ -49,6 +51,7 @@ queue<string> dirList(const char * parent){
 }
 
 void createFile(const char * dir){
+    cout<< "Armazenando " << dir << " em nome.sar" << endl;
     string dirStr = dir;
     queue<string> normalizedDirectories;
     queue<string> directories = dirList(dir);
@@ -58,10 +61,6 @@ void createFile(const char * dir){
 
     std::fstream fs;
     fs.open ("nome.sar", std::fstream::out | std::fstream::binary);
-    /*while(!directories.empty()){
-        cout<<directories.front()<<endl;
-        directories.pop();
-    }*/
 
     while(!auxDir.empty()){
         normalizedDirectories.push(auxDir.front().erase(0,dirStr.size()+1));
@@ -74,6 +73,14 @@ void createFile(const char * dir){
         if(fileOpened.is_open()){
             fs<<fileOpened.tellg()<<"|";
             fileOpened.seekg (0, fileOpened.beg);
+
+            char buffer;
+            while (!fileOpened.eof())
+            {
+                    fileOpened >> std::noskipws>> buffer;
+                    fs << buffer;
+            }
+            fs <<"|";
         }else
             fs<<"-1|";
 
@@ -87,9 +94,35 @@ void createFile(const char * dir){
     fs.close();
 }
 
+int readFile(const char * dir){
+    std::fstream fs, bf;
+    fs.open (dir, std::fstream::in | std::fstream::binary);
+    bf.open ("teste.txt", std::fstream::out | std::fstream::binary);
+    queue<string> paths;
+
+    char buffer;
+
+    if (fs.is_open())
+    {
+        while (!fs.eof())
+        {
+            fs >> std::noskipws>> buffer;
+            bf << buffer;
+        }
+    }
+    /*char * buffer = new char [blockSize];
+    do{
+        fs.get (buffer,blockSize);
+        cout<<buffer<<endl;
+    }while(!fs.eof());
+
+    return 0;*/
+
+}
+
 int main (void)
 {
-    createFile("C:\\Users\\leona\\Documents\\GitHub\\sarPacker");
-    //dirList(".\\");
-    //dirList("C:\\Users\\leona\\Documents\\My Games");
+    //createFile("C:\\Users\\leona\\Documents\\GitHub\\sarPacker");
+    createFile("C:\\Users\\leona\\Documents\\My Games\\Terraria\\Players");
+    //readFile("C:\\Users\\leona\\Documents\\GitHub\\sarPacker\\nome.sar");
 }
