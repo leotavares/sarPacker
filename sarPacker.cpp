@@ -54,48 +54,52 @@ queue<string> dirList(const char * parent){
     return resulDir;
 }
 
-void createFile(const char * dir){
-    cout<< "Armazenando " << dir << " em nome.sar" << endl;
-    string dirStr = dir;
-    queue<string> normalizedDirectories;
-    queue<string> directories = dirList(dir);
+int createFile(const char * dir){
+    if(opendir(dir)!=NULL){
+        cout<< "Armazenando " << dir << " em nome.sar" << endl;
+        string dirStr = dir;
+        queue<string> normalizedDirectories;
+        queue<string> directories = dirList(dir);
 
-    directories.pop();
-    queue<string> auxDir = directories;
+        directories.pop();
+        queue<string> auxDir = directories;
 
-    std::fstream fs;
-    fs.open ("nome.sar", std::fstream::out | std::fstream::binary);
+        std::fstream fs;
+        fs.open ("nome.sar", std::fstream::out | std::fstream::binary);
 
-    while(!auxDir.empty()){
-        normalizedDirectories.push(auxDir.front().erase(0,dirStr.size()+1));
-        auxDir.pop();
-    }
-    std::fstream fileOpened;
-    while(!normalizedDirectories.empty()){
-        fs<<"#|"<<normalizedDirectories.front()<<"|";
-        fileOpened.open (directories.front().c_str(), std::fstream::in| std::fstream::binary |std::fstream::ate);
-        if(fileOpened.is_open()){
-            fs<<fileOpened.tellg()<<"|";
-            fileOpened.seekg (0, fileOpened.beg);
+        while(!auxDir.empty()){
+            normalizedDirectories.push(auxDir.front().erase(0,dirStr.size()+1));
+            auxDir.pop();
+        }
+        std::fstream fileOpened;
+        while(!normalizedDirectories.empty()){
+            fs<<"#|"<<normalizedDirectories.front()<<"|";
+            fileOpened.open (directories.front().c_str(), std::fstream::in| std::fstream::binary |std::fstream::ate);
+            if(fileOpened.is_open()){
+                fs<<fileOpened.tellg()<<"|";
+                fileOpened.seekg (0, fileOpened.beg);
 
-            char buffer;
-            while (!fileOpened.eof())
-            {
+                char buffer;
+                while (!fileOpened.eof())
+                {
                     fileOpened >> std::noskipws>> buffer;
                     fs << buffer;
-            }
-            fs <<"|";
-        }else
-            fs<<"-1|";
+                }
+                fs <<"|";
+            }else
+                fs<<"-1|";
 
-        cout<<normalizedDirectories.front()<<endl;
+            cout<<normalizedDirectories.front()<<endl;
 
-        normalizedDirectories.pop();
-        if(!directories.empty())
-            directories.pop();
-        fileOpened.close();
-    }
-    fs.close();
+            normalizedDirectories.pop();
+            if(!directories.empty())
+                directories.pop();
+            fileOpened.close();
+        }
+        fs.close();
+        return 0;
+    }else
+        return 1;
 }
 
 ///função ainda pra ser implementada, não faz sentido
@@ -125,9 +129,34 @@ int readFile(const char * dir){
 
 }
 
-int main (void)
+int main (int argc, char *argv[])
 {
+    ///Debug
+    if(argc==1){
     //createFile("C:\\Users\\leona\\Documents\\GitHub\\sarPacker");
     createFile("C:\\Users\\leona\\Documents\\My Games\\Terraria\\Captures");
     //readFile("C:\\Users\\leona\\Documents\\GitHub\\sarPacker\\nome.sar");
+    return 0;
+    }
+    ///fim Debug
+
+
+    if(argc>=2){
+        if(string(argv[1]).compare("-e")==0){
+            int retorno = 0;
+            ///chama retorno = função para extrair passando argv[2] como parametro
+            return retorno;
+        }
+        if(string(argv[1]).compare("-c")==0){
+            int retorno = 0;
+            retorno = createFile(argv[2]);
+            return retorno;
+        }if(string(argv[1]).compare("-l")==0){
+            int retorno = 0;
+            ///chama retorno = função para listar passando argv[2] como parametro
+            return retorno;
+        }
+    }else{
+        cout<<"Argumentos errados<<endl";
+    }
 }
