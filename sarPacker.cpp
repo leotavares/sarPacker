@@ -1,41 +1,45 @@
 #include <stdio.h>
-#include <sys/types.h>
-#include <dirent.h>
-#include <iostream>
-#include <queue>
-#include <string>
-#include <fstream>
 #include <stdlib.h>
+#include <iostream>
+
+#include <string>
+#include <queue>
+
+#include <dirent.h>
+#include <fstream>
 
 using namespace std;
 
 const int blockSize = 4096;
-
+///função recursiva para listar todos os arquivos e pastas
+///recebe como parâmetro o diretório para listar
+///retorna uma fila com todos as pastas e arquivos
 queue<string> dirList(const char * parent){
 
-    DIR *dp;
-    struct dirent *ep;
-    queue<string> directories,resulDir;
+    DIR *directoryToWork;
+    struct dirent *fileOrFolder;
+    queue<string> directories,resulDir; ///directories recebe todos os arquivos e pastas do diretório atual, resul recebe recursivamente
     string parentStr = parent;
 
-    dp = opendir (parent);
-    if (dp != NULL)
+    directoryToWork = opendir (parent); ///tenta abrir o "diretório" atual
+    if (directoryToWork != NULL)
     {
-        while (ep = readdir (dp)){
-            directories.push(ep->d_name);
+        ///enquanto haver diretórios, coloca-os na fila
+        while (fileOrFolder = readdir (directoryToWork)){
+            directories.push(fileOrFolder->d_name);
         }
-        (void) closedir (dp);
+        (void) closedir (directoryToWork);  ///fecha o diretório
 
-        directories.pop();
+        directories.pop();  ///a operação superior sempre retorna . e .., os pops abaixo são para retira-los
         directories.pop();
     }
-
+    ///coloca o diretório na fila de diretórios
     resulDir.push(parentStr);
-
+    ///caso o diretório atual seja um arquivo, não passa por esse while e retorna diretamente pro diretório superior
     while(!directories.empty()){
-        string currentDirectory = directories.front();
-        string nextDirectory = parent;
-        if(nextDirectory[nextDirectory.size()-1]!='\\')
+        string currentDirectory = directories.front();  ///pega o primeiro diretório da fila
+        string nextDirectory = parent;  ///salva o diretório pai em outra string para ser editado
+        if(nextDirectory[nextDirectory.size()-1]!='\\') ///caso
             nextDirectory.append("\\");
         nextDirectory.append(currentDirectory);
         directories.pop();
@@ -94,6 +98,7 @@ void createFile(const char * dir){
     fs.close();
 }
 
+///função ainda pra ser implementada, não faz sentido
 int readFile(const char * dir){
     std::fstream fs, bf;
     fs.open (dir, std::fstream::in | std::fstream::binary);
@@ -123,6 +128,6 @@ int readFile(const char * dir){
 int main (void)
 {
     //createFile("C:\\Users\\leona\\Documents\\GitHub\\sarPacker");
-    createFile("C:\\Users\\leona\\Documents\\My Games\\Terraria\\Players");
+    createFile("C:\\Users\\leona\\Documents\\My Games\\Terraria\\Captures");
     //readFile("C:\\Users\\leona\\Documents\\GitHub\\sarPacker\\nome.sar");
 }
