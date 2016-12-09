@@ -1,10 +1,17 @@
+/*
+Autores:
+    Leonardo Tavares Oliveira; RA: 628174
+    Thiago Morano da Silva;    RA: 496227
+    Tulio Reis Carvalho;       RA: 628050
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
 
 #include <string>
 #include <queue>
-
+#include <math.h>
 #include <dirent.h>
 #include <fstream>
 
@@ -24,7 +31,7 @@ queue<string> dirList(const char * parent){
     directoryToWork = opendir (parent); ///tenta abrir o "diretório" atual
     if (directoryToWork != NULL)
     {
-        ///enquanto haver diretórios, coloca-os na fila
+        ///enquanto houver diretórios, coloca-os na fila
         while (fileOrFolder = readdir (directoryToWork)){
             directories.push(fileOrFolder->d_name);
         }
@@ -102,49 +109,144 @@ int createFile(const char * dir){
         return 1;
 }
 
-///função ainda pra ser implementada, não faz sentido
-int readFile(const char * dir){
-    std::fstream fs, bf;
-    fs.open (dir, std::fstream::in | std::fstream::binary);
-    bf.open ("teste.txt", std::fstream::out | std::fstream::binary);
-    queue<string> paths;
-
+//Função realiza a leitura e impressão dos arquivos salvos no .sar
+//Recebe o diretório em que o .sar se encontra
+//Retorna 0, caso tenha realizado a leitura com sucesso, ou 2 caso o diretório passado não seja .sar
+int printFile(const char * dir){
+    std::fstream fileSar;
     char buffer;
-
-    if (fs.is_open())
-    {
-        while (!fs.eof())
+    string numBytes = "";
+    int flag = 0;
+        /* flag status:
+                0 = ler o diretório
+                1 = pular os próximos numeros de bytes do arquivo se necessário
+                2 = ler o tamanho do diretório
+        */
+    fileSar.open (dir, std::fstream::in | std::fstream::binary);
+    if ((string(dir).compare(string(dir).size()-4, 4, ".sar") == 0) && fileSar.is_open()) {
+        fileSar.seekg (2, fileSar.beg);
+        while (!fileSar.eof())
         {
-            fs >> std::noskipws>> buffer;
-            bf << buffer;
+            fileSar >> std::noskipws >> buffer;
+            switch (flag) {
+                case 0:
+                    if(buffer=='|'){
+                        flag = 1;
+                        cout<<endl;
+                    }else
+                        cout << buffer;
+                    break;
+                case 1:
+                    if(buffer=='|'){
+                        long int nBytes = strtol(numBytes.c_str(), NULL, 10);
+                        if(nBytes!=-1)
+                            fileSar.seekg (nBytes+1, fileSar.cur);
+                        else
+                            fileSar.seekg (-1, fileSar.cur);
+                        flag = 2;
+                        numBytes.clear();
+                    }
+                    else {
+                        numBytes+=buffer;
+                    }
+                    break;
+
+                case 2:
+                    fileSar.seekg (2, fileSar.cur);
+                    flag = 0;
+                    break;
+            }
         }
     }
-    /*char * buffer = new char [blockSize];
-    do{
-        fs.get (buffer,blockSize);
-        cout<<buffer<<endl;
-    }while(!fs.eof());
+    else {
+        return 2;
+    }
+}
 
-    return 0;*/
-
+//Função realiza a extração dos arquivos salvos no .sar
+//Recebe o diretório em que o .sar se encontra
+//Retorna 0, caso tenha extraído com sucesso, ou 2 caso o diretório passado não seja .sar
+int extractFile (const char * dir) {
+    fstream fileSar;
+    fstream fileBeingWritten;
+    char buffer;
+    string numBytes = "";
+    string fileName = "";
+    int flag = 0;
+    long int bytesWritten = 0;
+    long int nBytes = 0;
+    bool write;
+        /* flag status:
+                0 = ler o diretório
+                1 = pular os próximos numeros de bytes do arquivo, se necessário; ou preparar para escrever no arquivo
+                2 = escrever no arquivo
+        */
+    fileSar.open (dir, fstream::in | fstream::binary);
+    if ((string(dir).compare(string(dir).size()-4, 4, ".sar") == 0) && fileSar.is_open()) {
+        fileSar.seekg (2, fileSar.beg);
+        while (!fileSar.eof())
+        {
+            fileSar >> std::noskipws >> buffer;
+            switch (flag) {
+                case 0:
+                    if(buffer=='|'){
+                        flag = 1;
+                    }else
+                        fileName += buffer;
+                    break;
+                case 1:
+                    if(buffer=='|'){
+                        nBytes = strtol(numBytes.c_str(), NULL, 10);
+                        if(nBytes == -1) {
+                            fileSar.seekg (-1, fileSar.cur);
+                            system(("mkdir .\\"+fileName).c_str());
+                            write = false;
+                        }
+                        else {
+                            fileBeingWritten.open((".\\"+fileName).c_str(), fstream::out | fstream::binary);
+                            write = true;
+                        }
+                        flag = 2;
+                        fileName.clear();
+                        numBytes.clear();
+                    }
+                    else {
+                        numBytes+=buffer;
+                    }
+                    break;
+                case 2:
+                    if(write) {
+                        if(bytesWritten == (nBytes+1)) {
+                            fileSar.seekg (2, fileSar.cur);
+                            flag = 0;
+                            fileBeingWritten.close();
+                            bytesWritten = 0;
+                            nBytes = 0;
+                        } else {
+                            fileBeingWritten << buffer;
+                            bytesWritten++;
+                        }
+                    }
+                    else {
+                        fileSar.seekg (2, fileSar.cur);
+                        flag = 0;
+                    }
+                    break;
+            }
+        }
+        return 0;
+    }
+    else {
+        return 2;
+    }
 }
 
 int main (int argc, char *argv[])
 {
-    ///Debug
-    if(argc==1){
-    //createFile("C:\\Users\\leona\\Documents\\GitHub\\sarPacker");
-    createFile("C:\\Users\\leona\\Documents\\My Games\\Terraria\\Captures");
-    //readFile("C:\\Users\\leona\\Documents\\GitHub\\sarPacker\\nome.sar");
-    return 0;
-    }
-    ///fim Debug
-
-
-    if(argc>=2){
+    if(argc>=3){
         if(string(argv[1]).compare("-e")==0){
             int retorno = 0;
-            ///chama retorno = função para extrair passando argv[2] como parametro
+            retorno = extractFile(argv[2]);
             return retorno;
         }
         if(string(argv[1]).compare("-c")==0){
@@ -153,10 +255,10 @@ int main (int argc, char *argv[])
             return retorno;
         }if(string(argv[1]).compare("-l")==0){
             int retorno = 0;
-            ///chama retorno = função para listar passando argv[2] como parametro
+            retorno = printFile(argv[2]);
             return retorno;
         }
     }else{
-        cout<<"Argumentos errados<<endl";
+        cout<<"Argumentos errados";
     }
 }
